@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>今天吃什么/玩什么 💕</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --pink: #ff6b9d;
+  --purple: #c44dff;
+  --bg: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%);
+  --card-bg: rgba(255,255,255,0.85);
+  --shadow: 0 8px 32px rgba(255,107,157,0.2);
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  padding-bottom: 80px;
+  overflow-x: hidden;
+}
+
+/* ===== Header ===== */
+.header {
+  text-align: center;
+  padding: 40px 20px 20px;
+  color: #d63384;
+}
+.header h1 { font-size: 24px; margin-bottom: 4px; }
+.header p { font-size: 14px; opacity: 0.7; }
+
+/* ===== Tab Content ===== */
+.tab-content { display: none; padding: 16px; }
+.tab-content.active { display: block; }
+
+/* ===== Selection Result ===== */
+.result-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 30px 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  animation: fadeInUp 0.5s ease;
+}
+.result-emoji { font-size: 64px; margin-bottom: 12px; }
+.result-text { font-size: 20px; color: #333; font-weight: 600; }
+.result-sub { font-size: 13px; color: #999; margin-top: 6px; }
+
+/* ===== Grid ===== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.grid-item {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 16px 8px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.grid-item:active {
+  transform: scale(0.92);
+}
+.grid-item.selected {
+  background: linear-gradient(135deg, #ff6b9d, #c44dff);
+  color: white;
+  box-shadow: 0 6px 24px rgba(196,77,255,0.4);
+  transform: scale(1.05);
+}
+.grid-item .emoji { font-size: 36px; display: block; margin-bottom: 6px; }
+.grid-item .name { font-size: 12px; font-weight: 500; }
+
+/* ===== Random Button ===== */
+.random-btn {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 20px auto;
+  padding: 14px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #ff6b9d, #c44dff);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(196,77,255,0.4);
+  transition: all 0.3s;
+  -webkit-tap-highlight-color: transparent;
+}
+.random-btn:active { transform: scale(0.96); }
+
+/* ===== Manage Section ===== */
+.manage-section {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.manage-section h3 {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.manage-list { list-style: none; }
+.manage-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-size: 14px;
+}
+.manage-list li:last-child { border: none; }
+.manage-list .item-left { display: flex; align-items: center; gap: 8px; }
+.delete-btn {
+  width: 28px; height: 28px;
+  border: none; border-radius: 50%;
+  background: #ff4757;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.delete-btn:active { transform: scale(0.85); }
+
+.add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.add-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.add-row input:focus { border-color: var(--pink); }
+.add-row input::placeholder { color: #ccc; }
+.add-row button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff6b9d, #c44dff);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  z-index: 100;
+}
+.tab-item {
+  flex: 1;
+  padding: 10px 0 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-item .tab-icon { font-size: 22px; }
+.tab-item .tab-label { font-size: 11px; color: #999; margin-top: 2px; }
+.tab-item.active .tab-label { color: var(--pink); font-weight: 600; }
+
+/* ===== Config Banner ===== */
+.config-banner {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.config-banner input {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  outline: none;
+}
+.config-banner input::placeholder { color: rgba(255,255,255,0.6); }
+.config-banner button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.25);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop-in { animation: pop 0.4s ease; }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 14px;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>💕 今天选什么</h1>
+  <p>宝贝来做决定啦~</p>
+</div>
+
+<!-- ===== 吃什么 ===== -->
+<div class="tab-content active" id="tab-food">
+  <div class="result-card" id="food-result">
+    <div class="result-emoji">🍽️</div>
+    <div class="result-text">点一个你喜欢的吧~</div>
+    <div class="result-sub">或者让命运帮你决定 ✨</div>
+  </div>
+  <div class="grid" id="food-grid"></div>
+  <button class="random-btn" onclick="randomPick('food')">🎲 随机帮我选一个</button>
+</div>
+
+<!-- ===== 玩什么 ===== -->
+<div class="tab-content" id="tab-game">
+  <div class="result-card" id="game-result">
+    <div class="result-emoji">🎮</div>
+    <div class="result-text">今天想玩什么呢~</div>
+    <div class="result-sub">选一个开心一下吧 🎉</div>
+  </div>
+  <div class="grid" id="game-grid"></div>
+  <button class="random-btn" onclick="randomPick('game')">🎲 随机帮我选一个</button>
+</div>
+
+<!-- ===== 管理 ===== -->
+<div class="tab-content" id="tab-manage">
+  <!-- PushPlus Token 配置 -->
+  <div class="config-banner">
+    <span>📱</span>
+    <input type="text" id="pptoken" placeholder="填PushPlus Token推送通知给你">
+    <button onclick="saveToken()">保存</button>
+  </div>
+
+  <div class="manage-section">
+    <h3>🍜 菜品列表</h3>
+    <ul class="manage-list" id="food-manage-list"></ul>
+    <div class="add-row">
+      <input type="text" id="food-input" placeholder="输入菜名" onkeydown="if(event.key==='Enter')addItem('food')">
+      <button onclick="addItem('food')">+ 添加</button>
+    </div>
+  </div>
+
+  <div class="manage-section">
+    <h3>🎮 游戏列表</h3>
+    <ul class="manage-list" id="game-manage-list"></ul>
+    <div class="add-row">
+      <input type="text" id="game-input" placeholder="输入游戏名" onkeydown="if(event.key==='Enter')addItem('game')">
+      <button onclick="addItem('game')">+ 添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab Bar ===== -->
+<div class="tab-bar">
+  <div class="tab-item active" onclick="switchTab('food', this)">
+    <div class="tab-icon">🍜</div>
+    <div class="tab-label">吃什么</div>
+  </div>
+  <div class="tab-item" onclick="switchTab('game', this)">
+    <div class="tab-icon">🎮</div>
+    <div class="tab-label">玩什么</div>
+  </div>
+  <div class="tab-item" onclick="switchTab('manage', this)">
+    <div class="tab-icon">⚙️</div>
+    <div class="tab-label">管理</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== Data =====
+const DEFAULT_FOODS = [
+  { emoji: '🍚', name: '米饭' },
+  { emoji: '🍜', name: '面条' },
+  { emoji: '🥟', name: '饺子' },
+  { emoji: '🍕', name: '披萨' },
+  { emoji: '🍔', name: '汉堡' },
+  { emoji: '🍣', name: '寿司' },
+  { emoji: '🍲', name: '火锅' },
+  { emoji: '🥩', name: '烧烤' },
+  { emoji: '🍗', name: '炸鸡' },
+  { emoji: '🥘', name: '麻辣烫' },
+  { emoji: '🌮', name: 'tacos' },
+  { emoji: '🍱', name: '便当' },
+  { emoji: '🍰', name: '蛋糕' },
+  { emoji: '🧋', name: '奶茶' },
+  { emoji: '🥗', name: '沙拉' },
+];
+
+const DEFAULT_GAMES = [
+  { emoji: '⚔️', name: '王者荣耀' },
+  { emoji: '🔫', name: '和平精英' },
+  { emoji: '🌀', name: '原神' },
+  { emoji: '🥚', name: '蛋仔派对' },
+  { emoji: '🎮', name: 'Switch' },
+  { emoji: '🎲', name: '桌游' },
+  { emoji: '🔐', name: '密室逃脱' },
+  { emoji: '📜', name: '剧本杀' },
+  { emoji: '🎬', name: '看电影' },
+  { emoji: '🚶', name: '散步' },
+  { emoji: '🛍️', name: '逛街' },
+  { emoji: '📸', name: '拍照' },
+];
+
+const FOOD_EMOJIS = ['🍚','🍜','🥟','🍕','🍔','🍣','🍲','🥩','🍗','🥘','🌮','🍱','🍰','🧋','🥗','🍝','🍛','🦐','🧁','🍦','☕','🫕','🥡','🫔'];
+const GAME_EMOJIS = ['🎮','🎲','🎯','🏆','🎪','🎬','🎭','🎤','🎶','⚽','🏸','🏓','🎿','🪁','🎯','🎯'];
+
+// ===== State =====
+let foods = JSON.parse(localStorage.getItem('love_foods')) || [...DEFAULT_FOODS];
+let games = JSON.parse(localStorage.getItem('love_games')) || [...DEFAULT_GAMES];
+let selectedFood = null;
+let selectedGame = null;
+
+// ===== Tab Switching =====
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  el.classList.add('active');
+  if (tab === 'manage') renderManage();
+}
+
+// ===== Render Grids =====
+function renderGrid(type) {
+  const list = type === 'food' ? foods : games;
+  const grid = document.getElementById(type + '-grid');
+  grid.innerHTML = list.map((item, i) =>
+    `<div class="grid-item" onclick="pickItem('${type}', ${i})">
+      <span class="emoji">${item.emoji}</span>
+      <span class="name">${item.name}</span>
+    </div>`
+  ).join('');
+}
+
+// ===== Pick Item =====
+function pickItem(type, index) {
+  const list = type === 'food' ? foods : games;
+  const item = list[index];
+  const resultEl = document.getElementById(type + '-result');
+
+  // Update selected state
+  const grid = document.getElementById(type + '-grid');
+  grid.querySelectorAll('.grid-item').forEach((el, i) => {
+    el.classList.toggle('selected', i === index);
+  });
+
+  // Show result
+  resultEl.innerHTML = `
+    <div class="result-emoji pop-in">${item.emoji}</div>
+    <div class="result-text pop-in">就选「${item.name}」吧！</div>
+    <div class="result-sub pop-in">已通知他啦 💕</div>
+  `;
+
+  // Save & notify
+  if (type === 'food') selectedFood = item;
+  else selectedGame = item;
+
+  sendNotification(type, item);
+}
+
+// ===== Random Pick =====
+function randomPick(type) {
+  const list = type === 'food' ? foods : games;
+  if (list.length === 0) {
+    showToast('列表空空的，先去添加吧~');
+    return;
+  }
+  const index = Math.floor(Math.random() * list.length);
+  pickItem(type, index);
+}
+
+// ===== Manage =====
+function renderManage() {
+  renderManageList('food');
+  renderManageList('game');
+}
+
+function renderManageList(type) {
+  const list = type === 'food' ? foods : games;
+  const ul = document.getElementById(type + '-manage-list');
+  ul.innerHTML = list.map((item, i) =>
+    `<li>
+      <div class="item-left"><span>${item.emoji}</span> ${item.name}</div>
+      <button class="delete-btn" onclick="deleteItem('${type}', ${i})">✕</button>
+    </li>`
+  ).join('');
+}
+
+function addItem(type) {
+  const input = document.getElementById(type + '-input');
+  const name = input.value.trim();
+  if (!name) return;
+
+  const list = type === 'food' ? foods : games;
+  const emojiList = type === 'food' ? FOOD_EMOJIS : GAME_EMOJIS;
+  const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+
+  list.push({ emoji, name });
+  save(type);
+  renderManage();
+  renderGrid(type);
+  input.value = '';
+  showToast('添加成功 ✨');
+}
+
+function deleteItem(type, index) {
+  const list = type === 'food' ? foods : games;
+  list.splice(index, 1);
+  save(type);
+  renderManage();
+  renderGrid(type);
+  showToast('已删除');
+}
+
+function save(type) {
+  if (type === 'food') localStorage.setItem('love_foods', JSON.stringify(foods));
+  else localStorage.setItem('love_games', JSON.stringify(games));
+}
+
+// ===== PushPlus Notification =====
+function saveToken() {
+  const token = document.getElementById('pptoken').value.trim();
+  if (token) {
+    localStorage.setItem('love_pp_token', token);
+    showToast('Token 已保存 ✅');
+  }
+}
+
+function sendNotification(type, item) {
+  const token = localStorage.getItem('love_pp_token');
+  if (!token) {
+    showToast('去管理页填Token才能通知他哦~');
+    return;
+  }
+
+  const title = type === 'food' ? '🍜 宝贝想吃什么' : '🎮 宝贝想玩什么';
+  const content = type === 'food'
+    ? `<h2>💕 宝贝选了：</h2><h1>${item.emoji} ${item.name}</h1><p style="color:#999">快去准备吧~</p>`
+    : `<h2>💕 宝贝想玩：</h2><h1>${item.emoji} ${item.name}</h1><p style="color:#999">安排起来！</p>`;
+
+  fetch('https://www.pushplus.plus/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, title, content, template: 'html' })
+  }).then(r => r.json()).then(data => {
+    if (data.code === 200) showToast('已通知他啦 💕');
+    else showToast('通知发送失败: ' + data.msg);
+  }).catch(() => showToast('网络错误，请检查网络'));
+}
+
+// ===== Toast =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== Init =====
+function init() {
+  renderGrid('food');
+  renderGrid('game');
+  const token = localStorage.getItem('love_pp_token');
+  if (token) document.getElementById('pptoken').value = token;
+}
+
+init();
+</script>
+</body>
+</html>
